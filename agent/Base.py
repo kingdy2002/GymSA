@@ -6,37 +6,34 @@ class agent_base(object) :
         self.hyperparameters = config.hyperparameters
 
         self.action_space = config.env.action_space
-        self.action_high = config.env.action_space.high
-        self.action_low = config.env.action_space.low
 
         self.observation_space = config.env.observation_space
         self.observation_space_high = config.env.observation_space.high
         self.observation_space_low = config.env.observation_space.low
 
-        self.device = "cuda:0" if config.use_GPU else "cpu"
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.now_epi = 0
         self.tot_step = 0
         self.epi_step = 0
 
         self.network = None
 
-  
-        self.optim = torch.optim.Adam(self.network.parameters(), \
-                lr=self.hyperparameters[lr])
+
 
 
     def update(self,batch) :
 
-        return loss
+        #return loss
         pass
 
     def predict(self,observation) :
+        # return pure result of network
         pass
 
-    def select_action(self,observation,etc) :
+    def select_action(self,observation) :
         pass
 
-    def td_error(self,state, next_state) :
+    def td_error(self,states, next_states, rewards, actions, dones) :
         pass
 
     def save_model(self,save_path) :

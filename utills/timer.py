@@ -24,3 +24,8 @@ class timer(object) :
         minute = sec / 60
         sec = sec % 60
         return (hour,minute,sec)
+
+    def time_str(self):
+        hour, minute, sec = self.cal_time(time.time())
+        str = '{} hours, {} minutes, {} seconds'.format(hour,minute,sec)
+        return str

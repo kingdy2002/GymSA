@@ -36,22 +36,17 @@ class ResidualBlock(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self,input_ch,size):
+    def __init__(self):
         super(Net, self).__init__()
 
         self.block1 = nn.Sequential(
-            conv2d(input_ch,64,3,1,1),
-            conv2d(64, 128, 3, 1,1)
+            conv2d(1,32,5,2,0),
+            conv2d(32, 64, 3, 1,1),
+            conv2d(64, 32, 3, 1, 1)
         )
-        self.block2 = nn.Sequential(
-            ResidualBlock(128, 128),
-            ResidualBlock(128, 128),
-            ResidualBlock(128, 128),
-            ResidualBlock(128, 128),
-            conv2d(128, 4, 1, 1, 0)
-        )
+
 
     def forward(self, x):
         x = self.block1(x)
-        x = self.block2(x)
+        x= x.view(-1,1600)
         return x

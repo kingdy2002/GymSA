@@ -13,7 +13,7 @@ class episode_run(object) :
         self.config = config
         self.logger = logger
         self.agent = agent
-        self.writer = utills.result.Writer
+        self.writer = utills.result.Writer(config)
         self.env = config.env
         self.env_name = config.env_name
 
@@ -21,19 +21,20 @@ class episode_run(object) :
 
         self.hyperparameters = config.hyperparameters
         
-        self.batch_size = self.hyperparameters[batch_size]
+        self.batch_size = self.hyperparameters['batch_size']
+        self.buffer_size = self.hyperparameters['buffer_size']
         
         if config.replay :
             if config.replay_buffer == 'replay_buffer' :
-                self.memory = modules.memory.replay_buffer
+                self.memory = modules.memory.replay_buffer(self.batch_size, self.buffer_size)
 
             if config.replay_buffer == 'per' :
-                self.memory = modules.memory.per
+                self.memory = modules.memory.per(self.batch_size, self.buffer_size)
 
 
         self.step = 0
         self.episode = 0
-        self.Timer = utills.timer()
+        self.Timer = utills.timer.timer()
 
         self.score = []
         self.episode_lis = []
@@ -43,7 +44,7 @@ class episode_run(object) :
     def run(self) :
 
         done = False
-        if config.evaluate :
+        if self.config.evaluate :
             self.test(self.config.test_epi)
             return
         
@@ -62,18 +63,18 @@ class episode_run(object) :
 
                 if self.config.epsilon :
                     epsilon = self.agent.epsilon(self.episode, self.config.max_epi)
-                    action = self.agent.select_action(state,epsilon)
+                    action = self.agent.select_action(state,self.episode)
                 else :
-                    action = self.agent.select_action(state)
-                next_state, reward, done, info = self.agent.step(action)
+                    action = self.agent.select_action(state,self.episode)
+                next_state, reward, done, info = self.agent.step([action])
 
                 if config.replay :
                     if config.replay_buffer == 'replay_buffer' :
-                        self.memory.push(state, next_state, action, reward, done)
+                        self.memory.push(state, action, reward, next_state,done)
 
                     if config.replay_buffer == 'per' :
                         td_error = self.agent.td_error(state, next_state)
-                        self.memory.push(td_error,state, next_state, action, reward, done)
+                        self.memory.push(td_error,state, action, reward,next_state, done)
                 
                 state = next_state
                 total_reward = total_reward + reward
@@ -81,12 +82,12 @@ class episode_run(object) :
                 if self.step % self.config.update_interval == 0 :
 
                     if config.replay :
-                        if len(self.memory) > self.batch_size :
-                            batch = self.memory.make_batch(self.batch_size)
-                            loss = self.agetn.update(batch)
+                        if len(self.memory) > (self.batch_size  * 2):
+                            batch = self.memory.make_batch()
+                            loss = self.agent.update(batch)
                             self.logger.log_stat('loss',loss,self.step)
                     else :
-                        loss = self.agetn.update(state, next_state, action, reward, done)
+                        loss = self.agent.update(state, action, reward, next_state, done)
                         self.logger.log_stat('loss',loss,self.step)
 
             episode_t = self.Timer.finish_episode()
